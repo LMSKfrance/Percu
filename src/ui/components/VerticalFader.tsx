@@ -64,7 +64,7 @@ export function VerticalFader({ value, onChange, height, disabled, stopPropagati
   return (
     <div
       ref={trackRef}
-      className="verticalFaderTrack"
+      className="w-2.5 min-w-2.5 rounded bg-slate-200/80 dark:bg-slate-800/80 relative cursor-pointer touch-none select-none"
       style={{ height }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -76,9 +76,9 @@ export function VerticalFader({ value, onChange, height, disabled, stopPropagati
       aria-valuenow={Math.round(pct)}
       aria-disabled={disabled}
     >
-      <div className="verticalFaderFill" style={{ height: `${pct}%` }} />
+      <div className="absolute bottom-0 left-0 w-full bg-primary rounded pointer-events-none transition-[height]" style={{ height: `${pct}%` }} />
       <div
-        className="verticalFaderHandle"
+        className="absolute left-1/2 w-3 h-3.5 -translate-x-1/2 rounded bg-white dark:bg-slate-300 border border-slate-300 dark:border-slate-500 shadow pointer-events-none transition-[bottom]"
         style={{ bottom: `calc(${pct}% - 7px)` }}
       />
     </div>

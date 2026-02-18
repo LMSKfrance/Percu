@@ -3,6 +3,7 @@ import { VOICE_ICONS } from '../constants';
 import { MeterBar } from './MeterBar';
 import { VerticalFader } from './VerticalFader';
 
+const FADER_HEIGHT = 100;
 
 interface MixerPanelProps {
   tracks: Track[];
@@ -72,14 +73,14 @@ export function MixerPanel({
                   </div>
                 </div>
                 <div className="mixerFaderArea">
-                  <div className="mixerFaderMeterWrap">
-                    <MeterBar value={meterValue} height="100%" />
+                  <div className="mixerFaderMeterWrap" style={{ height: FADER_HEIGHT }}>
+                    <MeterBar value={meterValue} height={FADER_HEIGHT} />
                   </div>
                   <div className="mixerFaderWrap" style={{ opacity: en ? 1 : 0.35 }}>
                     <VerticalFader
                       value={gain}
                       onChange={v => onChannelGainChange(t.name, v)}
-                      height="100%"
+                      height={FADER_HEIGHT}
                       disabled={!en}
                       stopPropagation
                     />

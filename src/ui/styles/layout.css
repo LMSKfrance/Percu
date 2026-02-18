@@ -39,27 +39,17 @@
 
 .midRack {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 0.75fr);
+  grid-template-columns: 1fr 320px 420px;
   gap: var(--gap);
   align-items: stretch;
   flex: 1;
   min-height: 0;
-  min-width: 0;
 }
-.midRack > * {
-  min-height: 0;
-  min-width: 0;
-  overflow: hidden;
-}
+.midRack > * { min-height: 0; }
 
 .bottomRack {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--gap);
   flex-shrink: 0;
-  min-width: 0;
-}
-.bottomRack > * {
-  min-width: 0;
-  overflow: hidden;
 }
