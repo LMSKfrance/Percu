@@ -1,0 +1,55 @@
+.appFrame {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: var(--pad2);
+  gap: var(--gap);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 10px var(--pad);
+  background: linear-gradient(180deg, var(--panel0), var(--panel1));
+  border: 1px solid var(--stroke);
+  border-radius: var(--radiusL);
+  box-shadow: var(--shadowPanel), var(--shadowInner);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  min-height: 60px;
+  z-index: 10;
+}
+.topLeft { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.topCenter { display: flex; align-items: center; gap: 16px; flex: 1; justify-content: center; }
+.topRight { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.brand { font-family: var(--mono); font-size: 18px; font-weight: 700; letter-spacing: 0.1em; color: var(--text); white-space: nowrap; user-select: none; }
+.brandSub { font-size: 10px; font-weight: 400; color: var(--muted2); margin-left: 6px; }
+.topGroup { display: flex; flex-direction: column; gap: 2px; }
+.topLabel { font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted2); line-height: 1; }
+.topBigNum { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.1; }
+.topSeed { font-family: var(--mono); font-size: 13px; color: var(--text); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settingsBtn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--stroke2); background: rgba(255,255,255,.04); color: var(--muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: color .12s, background .12s; }
+.settingsBtn:hover { background: rgba(255,255,255,.08); color: var(--text); }
+.statusDot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(75,134,255,.6); flex-shrink: 0; }
+.statusLabel { font-family: var(--mono); font-size: 8px; color: var(--muted2); text-transform: uppercase; letter-spacing: .08em; }
+
+.midRack {
+  display: grid;
+  grid-template-columns: 1fr 320px 420px;
+  gap: var(--gap);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+.midRack > * { min-height: 0; }
+
+.bottomRack {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+  flex-shrink: 0;
+}

@@ -1,355 +1,237 @@
-import { useState, useEffect } from 'react';
-import { StoreProvider, useStore, type ChordSynthType } from './store/context';
-import { LANE_IDS, type ScaleType } from './audio/types';
-import { generatePatternFromSeed } from './audio/grooveGenerator';
-import { exportWAV, downloadWAV } from './audio/export';
-import { audioEngine } from './audio/engine';
-import { SequencerGrid } from './ui/SequencerGrid';
-import { RadialDial } from './ui/RadialDial';
-import { BottomStrip } from './ui/BottomStrip';
-import './App.css';
-import './styles/sulfur.css';
-import './styles/full-ui.css';
-
-function TransportRow() {
-  const { state, api } = useStore();
-  return (
-    <div className="tpg-transport">
-      <button
-        type="button"
-        className="tpg-play"
-        onClick={() => api.setPlaying(true)}
-        disabled={state.playing}
-        title="Play (Space)"
-      >
-        ► Play
-      </button>
-      <button
-        type="button"
-        className="tpg-stop"
-        onClick={() => api.setPlaying(false)}
-        disabled={!state.playing}
-        title="Stop (Space)"
-      >
-        ■ Stop
-      </button>
-      <label>
-        <span style={{ marginRight: 6, fontSize: 10, color: 'var(--ink-muted)' }}>BPM</span>
-        <input
-          type="number"
-          min={20}
-          max={300}
-          value={state.bpm}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            if (!Number.isNaN(n)) api.setBPM(n);
-          }}
-        />
-      </label>
-      <div className="tpg-seed">
-        <label>
-          <span style={{ marginRight: 6, fontSize: 10, color: 'var(--ink-muted)' }}>Seed</span>
-          <input
-            type="text"
-            value={state.seed}
-            onChange={(e) => api.setSeed(e.target.value)}
-            onBlur={(e) => {
-              const v = e.target.value.trim();
-              if (v) api.setPattern(generatePatternFromSeed(v, { world: state.world, chordProgression: state.chordProgression }));
-            }}
-            style={{ width: 100 }}
-            title="Change seed and blur to generate a new groove from this seed"
-          />
-        </label>
-        <button type="button" onClick={() => api.newSeedAndGenerate()}>
-          New Seed
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TopSliders() {
-  const { state, api } = useStore();
-  const world = state.world;
-  const worldLabel = world < 0.35 ? 'Detroit' : world > 0.65 ? 'Berlin' : 'Tbilisi';
-  const swingPresets = [0.5, 0.55, 0.6, 0.66];
-  const swingSelect = swingPresets.reduce((a, b) => Math.abs(state.swing - a) < Math.abs(state.swing - b) ? a : b);
-  return (
-    <>
-      <div className="tpg-slider-row">
-        <span className="tpg-slider-label">Detroit ↔ Tbilisi ↔ Berlin:</span>
-        <input type="range" min={0} max={1} step={0.01} value={world} onChange={(e) => api.setWorld(Number(e.target.value))} className="tpg-slider" />
-        <span className="tpg-slider-value">{worldLabel} ({(world * 100).toFixed(0)}%)</span>
-      </div>
-      <div className="tpg-slider-row">
-        <span className="tpg-slider-label">Percussive ↔ Noisy:</span>
-        <input type="range" min={0} max={1} step={0.01} value={state.percNoisy} onChange={(e) => api.setPercNoisy(Number(e.target.value))} className="tpg-slider" />
-        <span className="tpg-slider-value">{(state.percNoisy * 100).toFixed(0)}%</span>
-      </div>
-      <div className="tpg-slider-row">
-        <span className="tpg-slider-label">Density:</span>
-        <input type="range" min={0} max={1} step={0.01} value={state.density} onChange={(e) => api.setDensity(Number(e.target.value))} className="tpg-slider" />
-        <span className="tpg-slider-value">{(state.density * 100).toFixed(0)}%</span>
-      </div>
-      <div className="tpg-slider-row">
-        <span className="tpg-slider-label">Close ↔ Far:</span>
-        <input type="range" min={0} max={1} step={0.01} value={state.closeFar} onChange={(e) => api.setCloseFar(Number(e.target.value))} className="tpg-slider" />
-        <span className="tpg-slider-value">{(state.closeFar * 100).toFixed(0)}%</span>
-      </div>
-      <div className="tpg-swing">
-        <span className="tpg-slider-label">Swing</span>
-        <select value={swingSelect} onChange={(e) => api.setSwing(Number(e.target.value))}>
-          <option value={0.5}>Straight (50%)</option>
-          <option value={0.55}>55%</option>
-          <option value={0.6}>60%</option>
-          <option value={0.66}>66%</option>
-        </select>
-        <input type="range" min={0.5} max={0.66} step={0.01} value={state.swing} onChange={(e) => api.setSwing(Number(e.target.value))} className="tpg-slider" style={{ width: 80 }} />
-        <span className="tpg-slider-value">{(state.swing * 100).toFixed(0)}%</span>
-      </div>
-      <div className="tpg-master-scale">
-        <span className="label">MASTER SCALE</span>
-        <select value={state.masterRoot} onChange={(e) => api.setMasterRoot(e.target.value)}>
-          {['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'].map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </select>
-        <select value={state.masterScale} onChange={(e) => api.setMasterScale(e.target.value as ScaleType)}>
-          <option value="Minor">Minor</option>
-          <option value="Dorian">Dorian</option>
-          <option value="Phrygian">Phrygian</option>
-          <option value="Major">Major</option>
-        </select>
-      </div>
-    </>
-  );
-}
-
-function PercussionPanel() {
-  const { state, api } = useStore();
-  const [fullness, setFullness] = useState(0);
-  const [fm, setFm] = useState(0);
-  const [decay, setDecay] = useState(0.5);
-  const [resonance, setResonance] = useState(0.3);
-  const [bite, setBite] = useState(0.5);
-  const [grit, setGrit] = useState(0);
-  const [hypnotic, setHypnotic] = useState(0);
-  const [bgNoise, setBgNoise] = useState(0);
-  const [ducking, setDucking] = useState(0);
-  const [kickDuck, setKickDuck] = useState(true);
-  return (
-    <div className="tpg-panel">
-      <div className="tpg-panel-title">PERCUSSION</div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Low Perc voice</span>
-        <select
-          style={{ flex: 1 }}
-          value={state.percVoiceLow}
-          onChange={(e) => api.setPercVoiceLow(e.target.value)}
-        >
-          <option value="default">Default</option>
-          <option value="dfam">DFAM</option>
-          <option value="syncussion">Syncussion</option>
-          <option value="fm drum">FM Drum</option>
-          <option value="fm drum 2">FM Drum 2</option>
-          <option value="basimilus">Basimilus</option>
-          <option value="perkons">Perkons</option>
-        </select>
-      </div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Mid Perc voice</span>
-        <select
-          style={{ flex: 1 }}
-          value={state.percVoiceMid}
-          onChange={(e) => api.setPercVoiceMid(e.target.value)}
-        >
-          <option value="default">Default</option>
-          <option value="dfam">DFAM</option>
-          <option value="syncussion">Syncussion</option>
-          <option value="fm drum">FM Drum</option>
-          <option value="fm drum 2">FM Drum 2</option>
-          <option value="basimilus">Basimilus</option>
-          <option value="perkons">Perkons</option>
-        </select>
-      </div>
-      {([
-        ['Fullness', fullness, setFullness],
-        ['FM', fm, setFm],
-        ['Decay', decay, setDecay],
-        ['Resonance', resonance, setResonance],
-        ['Bite', bite, setBite],
-        ['Grit', grit, setGrit],
-        ['Hypnotic', hypnotic, setHypnotic],
-        ['Background Noise', bgNoise, setBgNoise],
-        ['Ducking', ducking, setDucking],
-      ] as [string, number, (n: number) => void][]).map(([label, val, set]) => (
-        <div key={label} className="tpg-panel-row">
-          <span className="tpg-slider-label" style={{ minWidth: 90 }}>{label}</span>
-          <input type="range" min={0} max={1} step={0.01} value={val} onChange={(e) => set(Number(e.target.value))} className="tpg-slider" style={{ flex: 1 }} />
-          <span className="tpg-slider-value">{(val * 100).toFixed(0)}</span>
-        </div>
-      ))}
-      <div className="tpg-panel-row">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-          <input type="checkbox" checked={kickDuck} onChange={(e) => setKickDuck(e.target.checked)} />
-          <span>Kick</span>
-        </label>
-      </div>
-    </div>
-  );
-}
-
-function ChordPanel() {
-  const { state, api } = useStore();
-  return (
-    <div className="tpg-panel">
-      <div className="tpg-panel-title">CHORD</div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Progression</span>
-        <div className="tpg-knob-row tpg-dials-sm" style={{ flex: 1, justifyContent: 'flex-start' }}>
-          <RadialDial value={state.chordProgression} onChange={api.setChordProgression} label="Min→Full" />
-        </div>
-      </div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Synth</span>
-        <select value={state.chordSynth} onChange={(e) => api.setChordSynth(e.target.value as ChordSynthType)} style={{ flex: 1 }}>
-          <option value="prophet">Prophet</option>
-          <option value="analog">Analog</option>
-          <option value="fm">FM</option>
-        </select>
-      </div>
-      <div className="tpg-panel-row">
-        <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-          <input type="checkbox" defaultChecked />
-          <span>Filter</span>
-        </label>
-      </div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Type</span>
-        <select style={{ flex: 1 }}><option>LP</option><option>HP</option></select>
-      </div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Cutoff</span>
-        <input type="range" min={0} max={1} defaultValue={0.5} className="tpg-slider" style={{ flex: 1 }} />
-      </div>
-      <div className="tpg-panel-row">
-        <span className="tpg-slider-label">Res</span>
-        <input type="range" min={0} max={1} step={0.01} defaultValue={0.2} className="tpg-slider" style={{ flex: 1 }} />
-      </div>
-    </div>
-  );
-}
-
-function RandomisePanel() {
-  const { api } = useStore();
-  return (
-    <div className="tpg-panel">
-      <div className="tpg-panel-title">RANDOMISE</div>
-      <div className="tpg-randomise-btns">
-        <button type="button" onClick={() => api.newSeedAndGenerate()}>
-          New Seed
-        </button>
-        <button type="button" onClick={() => api.randomisePattern()}>
-          Pattern
-        </button>
-        <button type="button" onClick={() => api.randomisePerc()}>
-          Perc
-        </button>
-        <button type="button" onClick={() => api.randomiseFilter()}>
-          Filter
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ExportPanel() {
-  const { state } = useStore();
-  const [exporting, setExporting] = useState(false);
-  const [bars, setBars] = useState(8);
-  const handleWAV = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      const blob = await exportWAV({
-        pattern: state.pattern,
-        bpm: state.bpm,
-        startOffsetSteps: state.startOffsetSteps,
-        laneEnabled: state.laneEnabled,
-        bars,
-      });
-      downloadWAV(blob, `percu-export-${Date.now()}.wav`);
-    } finally {
-      setExporting(false);
-    }
-  };
-  return (
-    <div className="tpg-panel">
-      <div className="tpg-panel-title">Export</div>
-      <div className="tpg-export-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <span className="tpg-slider-label">Download WAV:</span>
-          <select value={bars} onChange={(e) => setBars(Number(e.target.value))}>
-            <option value={4}>4 bars</option>
-            <option value={8}>8 bars</option>
-            <option value={16}>16 bars</option>
-          </select>
-          <select><option>16-bit PCM</option></select>
-          <button type="button" className="tpg-btn-green" onClick={handleWAV} disabled={exporting}>
-            {exporting ? '…' : 'Download WAV'}
-          </button>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span className="tpg-slider-label">Export MIDI:</span>
-          <select><option>Master (all tracks)</option></select>
-          <button type="button" className="tpg-btn-orange">Export MIDI</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AppContent() {
-  const { state, api } = useStore();
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== 'Space') return;
-      const target = e.target as HTMLElement;
-      const tag = target?.tagName?.toLowerCase();
-      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-      e.preventDefault();
-      api.setPlaying(!state.playing);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [api, state.playing]);
-  return (
-    <div className="tpg-app">
-      <h1 className="tpg-title">Techno Percussive Noise Generator</h1>
-
-      <div className="tpg-top">
-        <TransportRow />
-        <TopSliders />
-      </div>
-
-      <div className="tpg-middle">
-        <PercussionPanel />
-        <ChordPanel />
-        <RandomisePanel />
-        <ExportPanel />
-      </div>
-
-      <BottomStrip />
-    </div>
-  );
-}
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { generatePattern, Pattern, GeneratorParams } from './groove/generator';
+import { Transport } from './audio/transport';
+import { renderWav, downloadBlob, RenderOptions } from './audio/renderWav';
+import { CityMode, CITY_MAP } from './ui/constants';
+import { LayoutShell } from './ui/LayoutShell';
+import { TopBar } from './ui/components/TopBar';
+import { SequencerPanel } from './ui/components/SequencerPanel';
+import { MixerPanel } from './ui/components/MixerPanel';
+import { MasterFxPanel } from './ui/components/MasterFxPanel';
+import { LaneInspector } from './ui/components/LaneInspector';
+import { EngineStrip } from './ui/components/EngineStrip';
 
 function App() {
+  const [pattern, setPattern] = useState<Pattern>({ tracks: [] });
+  const [bpm, setBPM] = useState(128);
+  const [seed, setSeed] = useState('techno');
+  const [seedHistory, setSeedHistory] = useState<string[]>(['techno']);
+  const [seedIdx, setSeedIdx] = useState(0);
+  const [cityMode, setCityMode] = useState<CityMode>('tbilisi');
+  const detroitBerlin = CITY_MAP[cityMode];
+  const [percussiveNoisy, setPercussiveNoisy] = useState(0.5);
+  const [density, setDensity] = useState(0.5);
+  const [laneToggles, setLaneToggles] = useState<Map<string, boolean>>(new Map());
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [wavBars, setWavBars] = useState<8 | 16>(8);
+  const [wavFormat, setWavFormat] = useState<'float32' | 'pcm16'>('pcm16');
+  const [isRendering, setIsRendering] = useState(false);
+  const [selectedLane, setSelectedLane] = useState<string | null>(null);
+  const [laneOffsets, setLaneOffsets] = useState<Map<string, number>>(new Map());
+  const [delaySends, setDelaySends] = useState<Map<string, number>>(new Map());
+  const [reverbSends, setReverbSends] = useState<Map<string, number>>(new Map());
+  const [panSends, setPanSends] = useState<Map<string, number>>(new Map());
+  const [compSends, setCompSends] = useState<Map<string, number>>(new Map());
+  const [channelGains, setChannelGains] = useState<Map<string, number>>(new Map());
+  const [percModel, setPercModel] = useState(0);
+  const [percDecay, setPercDecay] = useState(0.5);
+  const [percTone, setPercTone] = useState(0.5);
+  const [percBite, setPercBite] = useState(0.3);
+  const [percMotion, setPercMotion] = useState(0.2);
+  const [rumbleAmount, setRumbleAmount] = useState(0);
+  const [rumbleTune, setRumbleTune] = useState(0.5);
+  const [rumbleWidth, setRumbleWidth] = useState(0.4);
+  const [rumbleDecay, setRumbleDecay] = useState(0.5);
+  const [rumbleDrive, setRumbleDrive] = useState(0.2);
+
+  const transportRef = useRef<Transport | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const stepUpdateIntervalRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!audioContextRef.current) audioContextRef.current = new AudioContext();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params: GeneratorParams = { seed, detroitBerlin, percussiveNoisy, density };
+      const newPattern = generatePattern(params);
+      setPattern(newPattern);
+      setLaneToggles(prev => {
+        const WIP = new Set(['Chord', 'Acid']);
+        const next = new Map(prev);
+        newPattern.tracks.forEach(t => {
+          if (!next.has(t.name)) next.set(t.name, WIP.has(t.name) ? false : true);
+        });
+        if (transportRef.current) {
+          transportRef.current.setPattern(newPattern);
+          transportRef.current.setBPM(bpm);
+          transportRef.current.setPercussiveNoisy(percussiveNoisy);
+          newPattern.tracks.forEach(t => {
+            transportRef.current?.setLaneEnabled(t.name, next.get(t.name) ?? true);
+          });
+        } else if (audioContextRef.current) {
+          transportRef.current = new Transport(audioContextRef.current, newPattern, bpm);
+          transportRef.current.setPercussiveNoisy(percussiveNoisy);
+          newPattern.tracks.forEach(t => transportRef.current?.setLaneEnabled(t.name, true));
+        }
+        return next;
+      });
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [seed, detroitBerlin, percussiveNoisy, density, bpm]);
+
+  useEffect(() => { transportRef.current?.setBPM(bpm); }, [bpm]);
+  useEffect(() => { transportRef.current?.setPercussiveNoisy(percussiveNoisy); }, [percussiveNoisy]);
+  useEffect(() => {
+    if (transportRef.current) laneToggles.forEach((en, n) => transportRef.current?.setLaneEnabled(n, en));
+  }, [laneToggles]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      stepUpdateIntervalRef.current = window.setInterval(() => {
+        if (transportRef.current) setCurrentStep(transportRef.current.getCurrentStep());
+      }, 30);
+    } else {
+      if (stepUpdateIntervalRef.current !== null) clearInterval(stepUpdateIntervalRef.current);
+      stepUpdateIntervalRef.current = null;
+      setCurrentStep(0);
+    }
+    return () => { if (stepUpdateIntervalRef.current !== null) clearInterval(stepUpdateIntervalRef.current); };
+  }, [isPlaying]);
+
+  const handlePlay = async () => {
+    if (!transportRef.current) return;
+    if (isPlaying) { transportRef.current.stop(); setIsPlaying(false); }
+    else { await transportRef.current.play(); setIsPlaying(true); }
+  };
+  const handlePanic = () => {
+    if (transportRef.current) transportRef.current.stop();
+    setIsPlaying(false);
+  };
+
+  const pushSeed = useCallback((s: string) => {
+    setSeedHistory(prev => {
+      const next = [...prev.slice(0, seedIdx + 1), s];
+      setSeedIdx(next.length - 1);
+      return next;
+    });
+    setSeed(s);
+  }, [seedIdx]);
+  const handleSeedRandom = useCallback(() => pushSeed(Math.random().toString(36).substring(2, 10)), [pushSeed]);
+  const handleSeedPrev = useCallback(() => {
+    if (seedIdx > 0) { setSeedIdx(seedIdx - 1); setSeed(seedHistory[seedIdx - 1]); }
+  }, [seedIdx, seedHistory]);
+  const handleSeedNext = useCallback(() => {
+    if (seedIdx < seedHistory.length - 1) { setSeedIdx(seedIdx + 1); setSeed(seedHistory[seedIdx + 1]); }
+  }, [seedIdx, seedHistory]);
+  const handleSeedChange = useCallback((s: string) => pushSeed(s), [pushSeed]);
+  const handleLaneToggle = (name: string, enabled: boolean) => {
+    setLaneToggles(prev => { const n = new Map(prev); n.set(name, enabled); return n; });
+  };
+  const handleLaneOffsetChange = (name: string, delta: number) => {
+    setLaneOffsets(prev => {
+      const n = new Map(prev);
+      const next = (((n.get(name) ?? 0) + delta) % 16 + 16) % 16;
+      n.set(name, next);
+      transportRef.current?.setLaneOffset(name, next);
+      return n;
+    });
+  };
+  const handleDelaySendChange = (name: string, v: number) => {
+    setDelaySends(prev => { const n = new Map(prev); n.set(name, v); return n; });
+  };
+  const handleReverbSendChange = (name: string, v: number) => {
+    setReverbSends(prev => { const n = new Map(prev); n.set(name, v); return n; });
+  };
+  const handleChannelGainChange = (name: string, v: number) => {
+    setChannelGains(prev => { const n = new Map(prev); n.set(name, v); return n; });
+  };
+  const handlePanSendChange = (name: string, v: number) => {
+    setPanSends(prev => { const n = new Map(prev); n.set(name, v); return n; });
+  };
+  const handleCompSendChange = (name: string, v: number) => {
+    setCompSends(prev => { const n = new Map(prev); n.set(name, v); return n; });
+  };
+  const handleDownloadWav = async () => {
+    if (!pattern.tracks.length || isRendering) return;
+    setIsRendering(true);
+    try {
+      const opts: RenderOptions = { bars: wavBars, format: wavFormat };
+      const blob = await renderWav(pattern, bpm, laneToggles, percussiveNoisy, opts);
+      downloadBlob(blob, `percu_${bpm}bpm_${seed.substring(0, 8)}_${wavBars}bars.wav`);
+    } catch (e) { console.error(e); alert('WAV render failed'); }
+    finally { setIsRendering(false); }
+  };
+
+  const laneNames = pattern.tracks.map(t => t.name);
+
   return (
-    <StoreProvider>
-      <AppContent />
-    </StoreProvider>
+    <LayoutShell
+      topBar={
+        <TopBar
+          isPlaying={isPlaying} onPlay={handlePlay} onPanic={handlePanic}
+          bpm={bpm} onBPMChange={setBPM}
+          seed={seed} onSeedChange={handleSeedChange}
+          seedHistory={seedHistory} seedIdx={seedIdx}
+          onSeedPrev={handleSeedPrev} onSeedNext={handleSeedNext} onSeedRandom={handleSeedRandom}
+          cityMode={cityMode} onCityModeChange={setCityMode}
+          density={density} onDensityChange={setDensity}
+        />
+      }
+      sequencer={
+        <SequencerPanel
+          pattern={pattern} currentStep={currentStep} isPlaying={isPlaying}
+          selectedLane={selectedLane} onLaneSelect={setSelectedLane}
+          laneToggles={laneToggles} onLaneToggle={handleLaneToggle}
+          laneOffsets={laneOffsets} onLaneOffsetChange={handleLaneOffsetChange}
+        />
+      }
+      mixer={
+        <MixerPanel
+          tracks={pattern.tracks}
+          laneToggles={laneToggles} onLaneToggle={handleLaneToggle}
+          selectedLane={selectedLane} onLaneSelect={setSelectedLane}
+          isPlaying={isPlaying}
+          channelGains={channelGains} onChannelGainChange={handleChannelGainChange}
+          delaySends={delaySends} onDelaySendChange={handleDelaySendChange}
+          reverbSends={reverbSends} onReverbSendChange={handleReverbSendChange}
+          panSends={panSends} onPanSendChange={handlePanSendChange}
+          compSends={compSends} onCompSendChange={handleCompSendChange}
+        />
+      }
+      masterFx={
+        <MasterFxPanel
+          rumbleAmount={rumbleAmount} onRumbleAmountChange={setRumbleAmount}
+          rumbleTune={rumbleTune} onRumbleTuneChange={setRumbleTune}
+          rumbleWidth={rumbleWidth} onRumbleWidthChange={setRumbleWidth}
+          rumbleDecay={rumbleDecay} onRumbleDecayChange={setRumbleDecay}
+          rumbleDrive={rumbleDrive} onRumbleDriveChange={setRumbleDrive}
+        />
+      }
+      bottomRack={
+        <>
+          <EngineStrip
+            percModel={percModel} onPercModelChange={setPercModel}
+            percDecay={percDecay} onPercDecayChange={setPercDecay}
+            percTone={percTone} onPercToneChange={setPercTone}
+            percBite={percBite} onPercBiteChange={setPercBite}
+            percMotion={percMotion} onPercMotionChange={setPercMotion}
+            percussiveNoisy={percussiveNoisy} onPercussiveNoisyChange={setPercussiveNoisy}
+          />
+          <LaneInspector
+            selectedLane={selectedLane} lanes={laneNames}
+            wavBars={wavBars} onWavBarsChange={setWavBars}
+            wavFormat={wavFormat} onWavFormatChange={setWavFormat}
+            onDownloadWav={handleDownloadWav}
+            isRendering={isRendering}
+            hasPattern={pattern.tracks.length > 0}
+            onSeedRandom={handleSeedRandom}
+          />
+        </>
+      }
+    />
   );
 }
 

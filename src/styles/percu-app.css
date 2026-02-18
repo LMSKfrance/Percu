@@ -1,0 +1,39 @@
+@import "../ui/styles/tokens-percu.css";
+@import "../ui/styles/panel.css";
+@import "../ui/styles/layout.css";
+@import "../ui/styles/controls-percu.css";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg0);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, transparent 0%, transparent 55%, rgba(0,0,0,.25) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+#root {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, var(--bg0), var(--bg1));
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
+  border-radius: 28px;
+  height: calc(100vh - 40px);
+  box-shadow: var(--shadowOuter);
+}
+button { font-family: inherit; cursor: pointer; }
+input, select { font-family: inherit; }
