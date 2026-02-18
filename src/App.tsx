@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { generatePattern, Pattern, GeneratorParams } from './groove/generator';
+import { generatePattern, Pattern, GeneratorParams, Step } from './groove/generator';
 import { Transport } from './audio/transport';
 import { renderWav, downloadBlob, RenderOptions } from './audio/renderWav';
 import { CityMode, CITY_MAP } from './ui/constants';
@@ -47,6 +47,11 @@ function App() {
   const [rumbleWidth, setRumbleWidth] = useState(0.4);
   const [rumbleDecay, setRumbleDecay] = useState(0.5);
   const [rumbleDrive, setRumbleDrive] = useState(0.2);
+  const [swingType, setSwingType] = useState<'8th' | '16th'>('16th');
+  const [swingPercent, setSwingPercent] = useState(50);
+  const [accentSteps, setAccentSteps] = useState<Step[]>(() =>
+    Array.from({ length: 16 }, () => ({ on: false, vel: 0.8, micro: 0, ratchet: 0 }))
+  );
 
   const transportRef = useRef<Transport | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -166,6 +171,64 @@ function App() {
       return n;
     });
   };
+
+  const handleStepToggle = useCallback((trackName: string, displayStepIndex: number) => {
+    setPattern((prev) => {
+      const track = prev.tracks.find((t) => t.name === trackName);
+      if (!track) return prev;
+      const offset = laneOffsets.get(trackName) ?? 0;
+      const srcIdx = (displayStepIndex + offset) % 16;
+      const step = track.steps[srcIdx];
+      const nextTracks = prev.tracks.map((t) => {
+        if (t.name !== trackName) return t;
+        return {
+          ...t,
+          steps: t.steps.map((s, i) =>
+            i === srcIdx ? { ...s, on: !s.on, vel: !s.on ? 0.8 : 0 } : s
+          ),
+        };
+      });
+      const next = { ...prev, tracks: nextTracks };
+      transportRef.current?.setPattern(next);
+      return next;
+    });
+  }, [laneOffsets]);
+
+  const handleStepVelocityChange = useCallback((trackName: string, displayStepIndex: number, vel: number) => {
+    const clamped = Math.min(1, Math.max(0, vel));
+    setPattern((prev) => {
+      const track = prev.tracks.find((t) => t.name === trackName);
+      if (!track) return prev;
+      const offset = laneOffsets.get(trackName) ?? 0;
+      const srcIdx = (displayStepIndex + offset) % 16;
+      const nextTracks = prev.tracks.map((t) => {
+        if (t.name !== trackName) return t;
+        return {
+          ...t,
+          steps: t.steps.map((s, i) => (i === srcIdx ? { ...s, vel: clamped } : s)),
+        };
+      });
+      const next = { ...prev, tracks: nextTracks };
+      transportRef.current?.setPattern(next);
+      return next;
+    });
+  }, [laneOffsets]);
+
+  const handleAccentStepToggle = useCallback((displayStepIndex: number) => {
+    setAccentSteps((prev) =>
+      prev.map((s, i) =>
+        i === displayStepIndex ? { ...s, on: !s.on, vel: s.on ? 0 : 0.8 } : s
+      )
+    );
+  }, []);
+
+  const handleAccentStepVelocityChange = useCallback((displayStepIndex: number, vel: number) => {
+    const clamped = Math.min(1, Math.max(0, vel));
+    setAccentSteps((prev) =>
+      prev.map((s, i) => (i === displayStepIndex ? { ...s, vel: clamped } : s))
+    );
+  }, []);
+
   const handleDelaySendChange = (name: string, v: number) => {
     setDelaySends((prev) => {
       const n = new Map(prev);
@@ -251,6 +314,15 @@ function App() {
           onLaneToggle={handleLaneToggle}
           laneOffsets={laneOffsets}
           onLaneOffsetChange={handleLaneOffsetChange}
+          onStepToggle={handleStepToggle}
+          onStepVelocityChange={handleStepVelocityChange}
+          swingType={swingType}
+          onSwingTypeChange={setSwingType}
+          swingPercent={swingPercent}
+          onSwingPercentChange={setSwingPercent}
+          accentSteps={accentSteps}
+          onAccentStepToggle={handleAccentStepToggle}
+          onAccentStepVelocityChange={handleAccentStepVelocityChange}
         />
       }
       mixer={
