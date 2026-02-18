@@ -1,0 +1,261 @@
+/**
+ * Shared UI components – panel, button, segmented toggle, slider, meter, knob.
+ * Use with tokens.css.
+ */
+
+/* Panel */
+.ui-panel {
+  padding: var(--panel-padding);
+  background: var(--paper-dim);
+  border: var(--rule);
+  border-radius: var(--radius-md);
+}
+
+.ui-panel__title {
+  font-family: var(--font-mono-ui);
+  font-size: var(--title-section);
+  text-transform: uppercase;
+  letter-spacing: var(--title-section-spacing);
+  color: var(--ink-label);
+  padding: var(--section-header-padding);
+  margin: 0 calc(-1 * var(--space-4)) var(--space-2);
+  border-bottom: var(--rule);
+}
+
+/* Button */
+.ui-btn {
+  font-family: var(--font-mono-ui);
+  font-size: var(--label-param);
+  text-transform: uppercase;
+  letter-spacing: var(--label-param-spacing);
+  padding: var(--space-1) var(--space-2);
+  border: var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+
+.ui-btn:hover {
+  border-color: var(--ink-label);
+  color: var(--ink);
+}
+
+.ui-btn:active {
+  background: var(--paper-dim);
+}
+
+.ui-btn--active {
+  background: var(--ink-faint-up);
+  color: var(--paper);
+  border-color: var(--ink-faint-up);
+}
+
+.ui-btn--solo.ui-btn--active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Segmented toggle (pill: M | S) */
+.ui-seg {
+  display: inline-flex;
+  border: var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.ui-seg__opt {
+  font-family: var(--font-mono-ui);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  min-width: 22px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.ui-seg__opt:hover {
+  color: var(--ink);
+}
+
+.ui-seg__opt + .ui-seg__opt {
+  border-left: var(--rule);
+}
+
+.ui-seg__opt.is-active {
+  background: var(--ink-faint-up);
+  color: var(--paper);
+}
+
+.ui-seg__opt.is-solo.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.ui-seg__opt.is-solo.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Slider – unified track and handle */
+.ui-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--paper-dim);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ui-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  transition: box-shadow 0.12s ease;
+}
+
+.ui-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 0 2px var(--paper-dim);
+}
+
+.ui-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  transition: box-shadow 0.12s ease;
+}
+
+.ui-slider::-moz-range-thumb:hover {
+  box-shadow: 0 0 0 2px var(--paper-dim);
+}
+
+/* Vertical fader (rotated) */
+.ui-fader-v-wrap {
+  position: relative;
+  width: 24px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-fader-v {
+  width: 80px;
+  height: 24px;
+  margin: 0;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--paper-dim);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ui-fader-v::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+.ui-fader-v::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+/* Fader value tooltip (on drag) */
+.ui-fader-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translate(-50%, -4px);
+  font-family: var(--font-mono-ui);
+  font-size: 10px;
+  padding: 2px 6px;
+  background: var(--paper-dim);
+  border: var(--rule);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Meter */
+.ui-meter-v {
+  width: 10px;
+  height: 48px;
+  background: #151515;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ui-meter-v__fill {
+  width: 100%;
+  min-height: 2px;
+  background: var(--meter-fill);
+  transition: height 0.05s ease-out;
+}
+
+/* Knob – ring + center dot (SSL style); use with .radial-dial */
+.ui-knob--small .radial-dial__ring {
+  width: 40px;
+  height: 40px;
+  border-width: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
+}
+
+.ui-knob--small .radial-dial__ring::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+}
+
+.ui-knob--small .radial-dial__arc {
+  inset: 6px;
+}
+
+.ui-knob--small .radial-dial__label {
+  font-size: 9px;
+}
+
+/* Parameter label */
+.ui-param-label {
+  font-family: var(--font-mono-ui);
+  font-size: var(--label-param);
+  text-transform: uppercase;
+  letter-spacing: var(--label-param-spacing);
+  color: var(--ink-faint-up);
+}

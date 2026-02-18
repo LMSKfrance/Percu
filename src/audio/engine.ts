@@ -56,6 +56,13 @@ export class AudioEngine {
   private lanePan: Record<LaneId, number> = {} as Record<LaneId, number>;
   private laneSolo: Record<LaneId, boolean> = {} as Record<LaneId, boolean>;
   private lanePanner: Record<LaneId, StereoPannerNode | null> = {} as Record<LaneId, StereoPannerNode | null>;
+  private laneComp: Record<LaneId, DynamicsCompressorNode | null> = {} as Record<LaneId, DynamicsCompressorNode | null>;
+  private laneFilter: Record<LaneId, BiquadFilterNode | null> = {} as Record<LaneId, BiquadFilterNode | null>;
+  private laneCompAmount: Record<LaneId, number> = {} as Record<LaneId, number>;
+  private laneFilterCutoff: Record<LaneId, number> = {} as Record<LaneId, number>;
+  private masterEnvAttack = 0.01;
+  private masterEnvRelease = 0.2;
+  private masterEnvComp: DynamicsCompressorNode | null = null;
 
   async resume(): Promise<void> {
     if (this.ctx?.state === 'suspended') {
@@ -69,14 +76,22 @@ export class AudioEngine {
     const g = this.ctx.createGain();
     g.gain.value = 0.4 * this.masterGainValue;
     this.masterGain = g;
+    const envComp = this.ctx.createDynamicsCompressor();
+    envComp.threshold.value = -6;
+    envComp.knee.value = 6;
+    envComp.ratio.value = 3;
+    envComp.attack.value = this.masterEnvAttack;
+    envComp.release.value = this.masterEnvRelease;
+    g.connect(envComp);
+    this.masterEnvComp = envComp;
     const masterDelay = this.ctx.createDelay(2);
     masterDelay.delayTime.value = 60 / 128 / 2;
     const masterWet = this.ctx.createGain();
     masterWet.gain.value = 0;
     const masterDry = this.ctx.createGain();
     masterDry.gain.value = 1;
-    g.connect(masterDry);
-    g.connect(masterDelay);
+    envComp.connect(masterDry);
+    envComp.connect(masterDelay);
     masterDelay.connect(masterWet);
     masterDry.connect(this.ctx.destination);
     masterWet.connect(this.ctx.destination);
@@ -85,10 +100,25 @@ export class AudioEngine {
     this.masterDelayDry = masterDry;
 
     const connectLaneToMaster = (gainNode: GainNode, lane: LaneId) => {
+      const comp = this.ctx!.createDynamicsCompressor();
+      comp.threshold.value = -24 + (1 - (this.laneCompAmount[lane] ?? 0)) * 24;
+      comp.knee.value = 12;
+      comp.ratio.value = 2 + (this.laneCompAmount[lane] ?? 0) * 6;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.1;
+      const filter = this.ctx!.createBiquadFilter();
+      filter.type = 'lowpass';
+      const cutoffNorm = this.laneFilterCutoff[lane] ?? 1;
+      filter.frequency.value = 200 + cutoffNorm * cutoffNorm * 11800;
+      filter.Q.value = 0.7;
       const panner = this.ctx!.createStereoPanner();
       panner.pan.value = ((this.lanePan[lane] ?? 0.5) - 0.5) * 2;
-      gainNode.connect(panner);
+      gainNode.connect(comp);
+      comp.connect(filter);
+      filter.connect(panner);
       panner.connect(g);
+      this.laneComp[lane] = comp;
+      this.laneFilter[lane] = filter;
       this.lanePanner[lane] = panner;
     };
     this.kickGain = this.ctx.createGain();
@@ -252,6 +282,27 @@ export class AudioEngine {
   }
   setLaneSendR(_lane: LaneId, _value: number): void {
     // Rumble send per lane can be wired when building full mixer graph
+  }
+  setLaneCompAmount(lane: LaneId, value: number): void {
+    this.laneCompAmount = { ...this.laneCompAmount, [lane]: value };
+    const c = this.laneComp[lane];
+    if (c) {
+      c.threshold.value = -24 + (1 - value) * 24;
+      c.ratio.value = 2 + value * 6;
+    }
+  }
+  setLaneFilterCutoff(lane: LaneId, value: number): void {
+    this.laneFilterCutoff = { ...this.laneFilterCutoff, [lane]: value };
+    const f = this.laneFilter[lane];
+    if (f) f.frequency.value = 200 + value * value * 11800;
+  }
+  setMasterEnvAttack(v: number): void {
+    this.masterEnvAttack = Math.max(0.001, Math.min(1, v));
+    if (this.masterEnvComp) this.masterEnvComp.attack.value = this.masterEnvAttack;
+  }
+  setMasterEnvRelease(v: number): void {
+    this.masterEnvRelease = Math.max(0.01, Math.min(2, v));
+    if (this.masterEnvComp) this.masterEnvComp.release.value = this.masterEnvRelease;
   }
 
   setPattern(p: Pattern): void {

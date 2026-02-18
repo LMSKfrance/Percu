@@ -54,6 +54,10 @@ export type StoreState = {
   lanePan: Record<LaneId, number>;
   laneSolo: Record<LaneId, boolean>;
   laneSendR: Record<LaneId, number>;
+  laneCompAmount: Record<LaneId, number>;
+  laneFilterCutoff: Record<LaneId, number>;
+  masterEnvAttack: number;
+  masterEnvRelease: number;
 };
 
 const defaultLaneEnabled: Record<LaneId, boolean> = Object.fromEntries(
@@ -95,6 +99,10 @@ const initialState: StoreState = {
   lanePan: Object.fromEntries(LANE_IDS.map((id) => [id, 0.5])) as Record<LaneId, number>,
   laneSolo: Object.fromEntries(LANE_IDS.map((id) => [id, false])) as Record<LaneId, boolean>,
   laneSendR: Object.fromEntries(LANE_IDS.map((id) => [id, 0])) as Record<LaneId, number>,
+  laneCompAmount: Object.fromEntries(LANE_IDS.map((id) => [id, 0])) as Record<LaneId, number>,
+  laneFilterCutoff: Object.fromEntries(LANE_IDS.map((id) => [id, 1])) as Record<LaneId, number>,
+  masterEnvAttack: 0.01,
+  masterEnvRelease: 0.2,
 };
 
 type Action =
@@ -130,7 +138,11 @@ type Action =
   | { type: 'DECAY_METER_PEAKS' }
   | { type: 'SET_LANE_PAN'; payload: { lane: LaneId; value: number } }
   | { type: 'SET_LANE_SOLO'; payload: { lane: LaneId; on: boolean } }
-  | { type: 'SET_LANE_SEND_R'; payload: { lane: LaneId; value: number } };
+  | { type: 'SET_LANE_SEND_R'; payload: { lane: LaneId; value: number } }
+  | { type: 'SET_LANE_COMP_AMOUNT'; payload: { lane: LaneId; value: number } }
+  | { type: 'SET_LANE_FILTER_CUTOFF'; payload: { lane: LaneId; value: number } }
+  | { type: 'SET_MASTER_ENV_ATTACK'; payload: number }
+  | { type: 'SET_MASTER_ENV_RELEASE'; payload: number };
 
 function reducer(state: StoreState, action: Action): StoreState {
   switch (action.type) {
@@ -233,6 +245,18 @@ function reducer(state: StoreState, action: Action): StoreState {
       const next = { ...state.laneSendR, [action.payload.lane]: Math.max(0, Math.min(1, action.payload.value)) };
       return { ...state, laneSendR: next };
     }
+    case 'SET_LANE_COMP_AMOUNT': {
+      const next = { ...state.laneCompAmount, [action.payload.lane]: Math.max(0, Math.min(1, action.payload.value)) };
+      return { ...state, laneCompAmount: next };
+    }
+    case 'SET_LANE_FILTER_CUTOFF': {
+      const next = { ...state.laneFilterCutoff, [action.payload.lane]: Math.max(0, Math.min(1, action.payload.value)) };
+      return { ...state, laneFilterCutoff: next };
+    }
+    case 'SET_MASTER_ENV_ATTACK':
+      return { ...state, masterEnvAttack: Math.max(0.001, Math.min(1, action.payload)) };
+    case 'SET_MASTER_ENV_RELEASE':
+      return { ...state, masterEnvRelease: Math.max(0.01, Math.min(2, action.payload)) };
     default:
       return state;
   }
@@ -275,6 +299,10 @@ type StoreApi = {
   setLanePan: (lane: LaneId, value: number) => void;
   setLaneSolo: (lane: LaneId, on: boolean) => void;
   setLaneSendR: (lane: LaneId, value: number) => void;
+  setLaneCompAmount: (lane: LaneId, value: number) => void;
+  setLaneFilterCutoff: (lane: LaneId, value: number) => void;
+  setMasterEnvAttack: (v: number) => void;
+  setMasterEnvRelease: (v: number) => void;
 };
 
 const StoreContext = createContext<{ state: StoreState; api: StoreApi } | null>(null);
@@ -356,6 +384,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     LANE_IDS.forEach((lane) => audioEngine.setLaneSendR?.(lane, state.laneSendR[lane] ?? 0));
   }, [state.laneSendR]);
+  useEffect(() => {
+    LANE_IDS.forEach((lane) => audioEngine.setLaneCompAmount?.(lane, state.laneCompAmount[lane] ?? 0));
+  }, [state.laneCompAmount]);
+  useEffect(() => {
+    LANE_IDS.forEach((lane) => audioEngine.setLaneFilterCutoff?.(lane, state.laneFilterCutoff[lane] ?? 1));
+  }, [state.laneFilterCutoff]);
+  useEffect(() => {
+    audioEngine.setMasterEnvAttack?.(state.masterEnvAttack);
+  }, [state.masterEnvAttack]);
+  useEffect(() => {
+    audioEngine.setMasterEnvRelease?.(state.masterEnvRelease);
+  }, [state.masterEnvRelease]);
 
   useEffect(() => {
     audioEngine.onStep = (stepIndex) => dispatch({ type: 'SET_CURRENT_STEP', payload: stepIndex });
@@ -488,6 +528,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_LANE_SEND_R', payload: { lane, value: v } });
     audioEngine.setLaneSendR?.(lane, v);
   }, []);
+  const setLaneCompAmount = useCallback((lane: LaneId, value: number) => {
+    const v = Math.max(0, Math.min(1, value));
+    dispatch({ type: 'SET_LANE_COMP_AMOUNT', payload: { lane, value: v } });
+    audioEngine.setLaneCompAmount?.(lane, v);
+  }, []);
+  const setLaneFilterCutoff = useCallback((lane: LaneId, value: number) => {
+    const v = Math.max(0, Math.min(1, value));
+    dispatch({ type: 'SET_LANE_FILTER_CUTOFF', payload: { lane, value: v } });
+    audioEngine.setLaneFilterCutoff?.(lane, v);
+  }, []);
+  const setMasterEnvAttack = useCallback((v: number) => {
+    dispatch({ type: 'SET_MASTER_ENV_ATTACK', payload: Math.max(0.001, Math.min(1, v)) });
+    audioEngine.setMasterEnvAttack?.(Math.max(0.001, Math.min(1, v)));
+  }, []);
+  const setMasterEnvRelease = useCallback((v: number) => {
+    dispatch({ type: 'SET_MASTER_ENV_RELEASE', payload: Math.max(0.01, Math.min(2, v)) });
+    audioEngine.setMasterEnvRelease?.(Math.max(0.01, Math.min(2, v)));
+  }, []);
 
   const api: StoreApi = {
     setPattern,
@@ -526,6 +584,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLanePan,
     setLaneSolo,
     setLaneSendR,
+    setLaneCompAmount,
+    setLaneFilterCutoff,
+    setMasterEnvAttack,
+    setMasterEnvRelease,
   };
 
   return (

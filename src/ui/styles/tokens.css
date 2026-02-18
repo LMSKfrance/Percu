@@ -1,0 +1,33 @@
+/**
+ * UI design tokens – spacing, typography, colors.
+ * Complements design-tokens.css; use these in bottom strip and plugin UI.
+ */
+:root {
+  /* Spacing scale (8px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Panel */
+  --panel-padding: var(--space-4);
+  --section-header-padding: var(--space-3) var(--space-4);
+  --control-row-gap: var(--space-3);
+
+  /* Typography – hierarchy */
+  --font-sans: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-mono-ui: var(--font-mono);
+
+  --title-section: 12px;      /* MIXER, CH DYNAMICS – mono caps */
+  --title-section-spacing: 0.08em;
+  --label-lane: 11px;         /* Lane names – mono caps */
+  --label-param: 10px;        /* Parameter labels – mono caps muted */
+  --label-param-spacing: 0.06em;
+
+  /* Contrast boost (~10–15%) for labels */
+  --ink-label: #b8b8b8;
+  --ink-faint-up: #777;
+  --accent-knob: #5a9e6a;
+  --meter-fill: #4a90d9;
+}

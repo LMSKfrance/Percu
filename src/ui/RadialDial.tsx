@@ -7,6 +7,10 @@ export interface RadialDialProps {
   label: string;
   bipolar?: boolean;
   step?: number;
+  /** Double-click resets to this value */
+  defaultValue?: number;
+  /** Optional class for small SSL-style knobs */
+  className?: string;
 }
 
 function angleToValue(angleRad: number, bipolar: boolean): number {
@@ -28,7 +32,13 @@ export function RadialDial({
   label,
   bipolar = false,
   step = 0.01,
+  defaultValue,
+  className = '',
 }: RadialDialProps) {
+  const defaultVal = defaultValue ?? (bipolar ? 0 : 0.5);
+  const handleDoubleClick = useCallback(() => {
+    onChange(defaultVal);
+  }, [onChange, defaultVal]);
   const ringRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<boolean>(false);
   const dragStartedRef = useRef<boolean>(false);
@@ -126,13 +136,15 @@ export function RadialDial({
 
   return (
     <div
-      className={`radial-dial ${active ? 'radial-dial--active' : ''} ${showValue ? 'radial-dial--show-value' : ''}`}
+      className={`radial-dial ${active ? 'radial-dial--active' : ''} ${showValue ? 'radial-dial--show-value' : ''} ${className}`}
       title={label}
     >
       <div
         ref={ringRef}
         className="radial-dial__ring"
         onPointerDown={onPointerDown}
+        onDoubleClick={defaultValue !== undefined ? handleDoubleClick : undefined}
+        title={defaultValue !== undefined ? 'Double-click to reset' : undefined}
         role="slider"
         aria-label={label}
         aria-valuenow={value}
