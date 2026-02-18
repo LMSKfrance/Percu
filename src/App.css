@@ -1,0 +1,27 @@
+* { box-sizing: border-box; }
+body { margin: 0; }
+
+.su-input-num {
+  width: 56px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  padding: 4px 6px;
+  border: var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+}
+.su-input-num:focus { outline: none; border-color: var(--oxide); }
+
+.su-lane-cb { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+
+.su-sat .radial-dial__label {
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}

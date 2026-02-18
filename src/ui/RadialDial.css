@@ -1,0 +1,83 @@
+.radial-dial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.radial-dial__ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: var(--rule);
+  background: var(--paper-dim);
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.radial-dial__ring:hover {
+  border-color: var(--ink-muted);
+}
+
+.radial-dial__ring:focus {
+  outline: none;
+  border-color: var(--oxide);
+}
+
+.radial-dial--active .radial-dial__ring,
+.radial-dial__ring:active {
+  border-color: var(--oxide);
+}
+
+.radial-dial__arc {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from -90deg,
+    var(--oxide-dim) 0deg,
+    var(--oxide-dim) var(--arc-deg),
+    transparent var(--arc-deg)
+  );
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.radial-dial__hint {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  text-transform: var(--text-caps);
+  color: var(--ink-faint);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radial-dial__ring:hover .radial-dial__hint {
+  opacity: 1;
+}
+
+.radial-dial__label {
+  font-size: var(--font-size-xs);
+  text-transform: var(--text-caps);
+  color: var(--ink-muted);
+  letter-spacing: var(--letter-spacing);
+}
+
+.radial-dial__value {
+  font-size: var(--font-size-xs);
+  color: var(--ink);
+  min-height: 14px;
+}
+
+.radial-dial:not(.radial-dial--show-value) .radial-dial__value {
+  opacity: 0;
+}
+
+.radial-dial--active .radial-dial__value,
+.radial-dial--show-value .radial-dial__value {
+  opacity: 1;
+}

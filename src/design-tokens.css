@@ -1,0 +1,32 @@
+/* Dark theme */
+:root {
+  --paper: #0d0d0d;
+  --paper-dim: #1a1a1a;
+  --ink: #e8e8e8;
+  --ink-0: #e8e8e8;
+  --ink-muted: #aaa;
+  --ink-faint: #666;
+  --rule: 1px solid #333;
+  --rule-strong: 1px solid #555;
+  --font-mono: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-md: 12px;
+  --letter-spacing: 0.04em;
+  --text-caps: uppercase;
+  --oxide: #6b9e6b;
+  --oxide-dim: #5a8a5a;
+  --sulfur: #d4a84b;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  letter-spacing: var(--letter-spacing);
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
