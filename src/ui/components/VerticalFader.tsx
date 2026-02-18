@@ -3,7 +3,7 @@ import { useRef, useCallback } from 'react';
 interface VerticalFaderProps {
   value: number;
   onChange: (value: number) => void;
-  height: number;
+  height: number | string;
   disabled?: boolean;
   stopPropagation?: boolean;
 }
