@@ -31,6 +31,72 @@
   }
 }
 
+/* ─── PERCU PRO Design system (Phase 1) ───────────────────────────────── */
+:root {
+  /* Spacing: only 8/12/16/24 */
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  /* Geometry */
+  --radius-panel: 18px;
+  --radius-inner: 12px;
+  --radius-btn: 12px;
+  /* Shadows: soft 2-layer, no cheap glow on whole panels */
+  --shadowPanel: 0 12px 40px rgba(0,0,0,.45), 0 2px 8px rgba(0,0,0,.35);
+  --shadowInner: inset 0 1px 0 rgba(255,255,255,.06);
+  /* Interaction */
+  --hit-min: 28px;
+  /* Typography: panel titles slightly brighter, labels more contrast */
+  --panel-title: rgba(232,238,248,0.85);
+  --label: rgba(232,238,248,0.72);
+  --muted: rgba(232,238,248,0.5);
+}
+/* Panel base: fixed header, consistent padding */
+.panel,
+.panel-container {
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadowPanel), var(--shadowInner);
+  padding: var(--space-md);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.panelHeader {
+  height: 44px;
+  min-height: 44px;
+  padding: 0 var(--space-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--panel-title);
+  user-select: none;
+  flex-shrink: 0;
+}
+.panelBody {
+  padding: var(--space-md) 0 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* Inner controls: radius 12 */
+[class*="rounded"] .rounded-sm { border-radius: var(--radius-inner) !important; }
+/* Buttons: radius 12, min hit 28px */
+.btn-min {
+  min-width: var(--hit-min);
+  min-height: var(--hit-min);
+  border-radius: var(--radius-btn);
+}
+/* Glow only on active/selected (not whole panels) */
+.glow-active {
+  box-shadow: 0 0 0 1px rgba(75,134,255,0.25), 0 0 12px rgba(75,134,255,0.15);
+}
+
 /* Scrollbars: thin, match design */
 ::-webkit-scrollbar {
   width: 4px;
@@ -41,7 +107,7 @@
 }
 ::-webkit-scrollbar-thumb {
   background: #475569;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
 }
 
 /* Step grid utility */

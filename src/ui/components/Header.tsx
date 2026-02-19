@@ -56,7 +56,7 @@ export function Header({
       <div className="flex items-center gap-8">
         <div className="flex items-center gap-2">
           <span className="font-bold tracking-[0.2em] text-lg font-mono text-slate-800 dark:text-slate-200">
-            PERCU PRO <span className="text-[10px] font-normal opacity-50">V1.0</span>
+            PERCU PRO <span className="text-[10px] font-normal opacity-60 ml-1">V1.0</span> <button type="button" className="text-[9px] opacity-50 hover:opacity-80 ml-1" title="About">About</button>
           </span>
         </div>
         <div className="flex items-center gap-2">

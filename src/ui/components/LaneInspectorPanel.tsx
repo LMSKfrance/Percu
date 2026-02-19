@@ -32,10 +32,13 @@ export function LaneInspectorPanel({
   const setMacro = (key: string, v: number) => setVals((prev) => ({ ...prev, [key]: v }));
 
   return (
-    <section className="bg-panel-light dark:bg-panel-dark border border-border-light dark:border-border-dark p-4 rounded shadow-sm flex flex-col justify-between">
+    <section className="panel-container bg-panel-light dark:bg-panel-dark border border-border-light dark:border-border-dark flex flex-col justify-between">
       <div>
-        <h3 className="text-xs font-bold uppercase tracking-[0.2em] opacity-60 mb-2">Lane Inspector</h3>
-        <div className="mb-4 text-[10px]">
+        <div className="panelHeader mb-0 pb-0">
+          <h3 className="text-xs font-bold uppercase tracking-[0.2em]" style={{ color: 'var(--panel-title)' }}>Lane Inspector</h3>
+          <span />
+        </div>
+        <div className="mb-4 text-[10px]" style={{ color: 'var(--label)' }}>
           <span className="opacity-60 uppercase font-bold">Selected:</span>{' '}
           <span className="text-primary font-bold uppercase">{lane || '—'}</span>
         </div>
@@ -80,9 +83,10 @@ export function LaneInspectorPanel({
         </div>
       </div>
       <div className="space-y-2">
-        <button type="button" className="w-full bg-primary text-white text-[10px] font-bold uppercase py-2.5 rounded shadow-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={onDownloadWav} disabled={isRendering || !hasPattern}>
+        <button type="button" className="w-full bg-primary text-white text-xs font-bold uppercase py-3 rounded-lg shadow-md hover:bg-blue-600 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed btn-min min-h-[var(--hit-min)]" onClick={onDownloadWav} disabled={isRendering || !hasPattern}>
           {isRendering ? 'Rendering…' : 'Export WAV'}
         </button>
+        <button type="button" className="w-full border border-border-light dark:border-border-dark text-[10px] font-bold uppercase py-2 rounded mt-2 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors btn-min min-h-[var(--hit-min)]" title="Copy share link (placeholder)">Share</button>
       </div>
     </section>
   );

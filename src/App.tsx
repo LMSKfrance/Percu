@@ -47,6 +47,7 @@ function App() {
   const [rumbleWidth, setRumbleWidth] = useState(0.4);
   const [rumbleDecay, setRumbleDecay] = useState(0.5);
   const [rumbleDrive, setRumbleDrive] = useState(0.2);
+  const [swingPercent, setSwingPercent] = useState(50);
 
   const transportRef = useRef<Transport | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -251,6 +252,8 @@ function App() {
           onLaneToggle={handleLaneToggle}
           laneOffsets={laneOffsets}
           onLaneOffsetChange={handleLaneOffsetChange}
+          swingPercent={swingPercent}
+          onSwingChange={setSwingPercent}
         />
       }
       mixer={
