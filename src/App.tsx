@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { generatePattern, Pattern, GeneratorParams } from './groove/generator';
 import { Transport } from './audio/transport';
 import { renderWav, downloadBlob, RenderOptions } from './audio/renderWav';
+import type { GrooveTemplateId } from './audio/grooveTemplates';
+import { exportPercuPayload } from './exportPercuPayload';
 import { CityMode, CITY_MAP } from './ui/constants';
 import { LayoutShell } from './ui/LayoutShell';
 import { Header } from './ui/components/Header';
@@ -48,6 +50,8 @@ function App() {
   const [rumbleDecay, setRumbleDecay] = useState(0.5);
   const [rumbleDrive, setRumbleDrive] = useState(0.2);
   const [swingPercent, setSwingPercent] = useState(50);
+  const [grooveTemplateId, setGrooveTemplateId] = useState<GrooveTemplateId>('straight');
+  const [soloToggles, setSoloToggles] = useState<Map<string, boolean>>(new Map());
 
   const transportRef = useRef<Transport | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -95,6 +99,15 @@ function App() {
   useEffect(() => {
     if (transportRef.current) laneToggles.forEach((en, n) => transportRef.current?.setLaneEnabled(n, en));
   }, [laneToggles]);
+  useEffect(() => {
+    transportRef.current?.setSwingPercent(swingPercent);
+  }, [swingPercent]);
+  useEffect(() => {
+    transportRef.current?.setGrooveTemplateId(grooveTemplateId);
+  }, [grooveTemplateId]);
+  useEffect(() => {
+    transportRef.current?.setSoloToggles(soloToggles);
+  }, [soloToggles]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -158,6 +171,13 @@ function App() {
       return n;
     });
   };
+  const handleSoloToggle = (name: string, solo: boolean) => {
+    setSoloToggles((prev) => {
+      const n = new Map(prev);
+      n.set(name, solo);
+      return n;
+    });
+  };
   const handleLaneOffsetChange = (name: string, delta: number) => {
     setLaneOffsets((prev) => {
       const n = new Map(prev);
@@ -217,6 +237,25 @@ function App() {
     }
   };
 
+  const handleExportPercuPayload = () => {
+    if (!pattern.tracks.length) return;
+    const payload = exportPercuPayload(pattern, {
+      tempo: bpm,
+      loopLength: wavBars,
+      swing: swingPercent,
+      grooveTemplateId,
+      seed,
+      laneToggles,
+      soloToggles,
+    });
+    console.log('Percu export payload:', payload);
+    try {
+      navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    } catch {
+      // clipboard may be unavailable
+    }
+  };
+
   const laneNames = pattern.tracks.map((t) => t.name);
 
   return (
@@ -250,10 +289,14 @@ function App() {
           onLaneSelect={setSelectedLane}
           laneToggles={laneToggles}
           onLaneToggle={handleLaneToggle}
+          soloToggles={soloToggles}
+          onSoloToggle={handleSoloToggle}
           laneOffsets={laneOffsets}
           onLaneOffsetChange={handleLaneOffsetChange}
           swingPercent={swingPercent}
           onSwingChange={setSwingPercent}
+          grooveTemplateId={grooveTemplateId}
+          onGrooveChange={setGrooveTemplateId}
         />
       }
       mixer={
@@ -302,6 +345,7 @@ function App() {
           isRendering={isRendering}
           hasPattern={pattern.tracks.length > 0}
           onSeedRandom={handleSeedRandom}
+          onExportPercuPayload={handleExportPercuPayload}
         />
       }
       masterFxFooter={

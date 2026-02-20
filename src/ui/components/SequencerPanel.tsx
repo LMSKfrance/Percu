@@ -1,4 +1,6 @@
 import { Pattern } from '../../groove/generator';
+import type { GrooveTemplateId } from '../../audio/grooveTemplates';
+import { GROOVE_TEMPLATE_IDS } from '../../audio/grooveTemplates';
 import { WIP_LANES } from '../constants';
 
 interface SequencerPanelProps {
@@ -9,11 +11,24 @@ interface SequencerPanelProps {
   onLaneSelect: (name: string) => void;
   laneToggles: Map<string, boolean>;
   onLaneToggle: (name: string, enabled: boolean) => void;
+  soloToggles?: Map<string, boolean>;
+  onSoloToggle?: (name: string, solo: boolean) => void;
   laneOffsets: Map<string, number>;
   onLaneOffsetChange: (name: string, delta: number) => void;
   swingPercent?: number;
   onSwingChange?: (v: number) => void;
+  grooveTemplateId?: GrooveTemplateId;
+  onGrooveChange?: (id: GrooveTemplateId) => void;
 }
+
+const GROOVE_LABELS: Record<GrooveTemplateId, string> = {
+  straight: 'Straight',
+  '8th': '8th',
+  '16th': '16th',
+  'ableton-16-swing-55': 'Ableton 16 Swing 55',
+  'mpc-16-swing': 'MPC 16 Swing',
+  'sp1200-shuffle': 'SP1200 shuffle',
+};
 
 export function SequencerPanel({
   pattern,
@@ -23,10 +38,14 @@ export function SequencerPanel({
   onLaneSelect,
   laneToggles,
   onLaneToggle,
+  soloToggles = new Map(),
+  onSoloToggle,
   laneOffsets,
   onLaneOffsetChange,
   swingPercent = 50,
   onSwingChange,
+  grooveTemplateId = 'straight',
+  onGrooveChange,
 }: SequencerPanelProps) {
   return (
     <section className="panel-container bg-panel-light dark:bg-panel-dark border border-border-light dark:border-border-dark h-full flex flex-col min-h-0">
@@ -44,10 +63,10 @@ export function SequencerPanel({
       <div className="flex items-center gap-4 py-2 px-0 flex-shrink-0" style={{ minHeight: '40px' }}>
         <div className="flex items-center gap-2">
           <label className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--label)', width: '52px' }}>Groove</label>
-          <select className="bg-slate-100 dark:bg-slate-800 border border-border-light dark:border-border-dark text-[11px] font-medium rounded px-2 py-1.5 h-8" style={{ width: '220px' }}>
-            <option value="straight">Straight</option>
-            <option value="8th">8th</option>
-            <option value="16th">16th</option>
+          <select className="bg-slate-100 dark:bg-slate-800 border border-border-light dark:border-border-dark text-[11px] font-medium rounded px-2 py-1.5 h-8" style={{ width: '220px' }} value={grooveTemplateId} onChange={(e) => onGrooveChange?.(e.target.value as GrooveTemplateId)}>
+            {GROOVE_TEMPLATE_IDS.map((id) => (
+              <option key={id} value={id}>{GROOVE_LABELS[id]}</option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-2">
@@ -64,15 +83,15 @@ export function SequencerPanel({
           const isSelected = selectedLane === track.name;
           return (
             <div key={track.name} className={`flex items-center gap-3 ${isMuted ? 'opacity-35' : ''}`}>
-              <div className="flex items-center gap-2 flex-shrink-0 w-52">
-                <div className="flex gap-1">
+              <div className="flex items-center gap-2 flex-shrink-0 w-52 min-w-52 max-w-52">
+                <div className="flex gap-1 shrink-0">
                   <button type="button" className="btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-primary/20 hover:border-primary/50 text-[10px] font-bold transition-colors" onClick={() => onLaneOffsetChange(track.name, -1)} aria-label="Offset left">◀</button>
                   <button type="button" className="btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-primary/20 hover:border-primary/50 text-[10px] font-bold transition-colors" onClick={() => onLaneOffsetChange(track.name, 1)} aria-label="Offset right">▶</button>
                 </div>
-                <button type="button" className={`btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded-full text-[9px] font-bold transition-colors ${isMuted ? 'bg-primary text-white border-primary' : 'border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-primary/20'}`} onClick={() => onLaneToggle(track.name, !en)} aria-pressed={isMuted}>M</button>
-                <button type="button" className="btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded-full border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-yellow-500/20 text-[9px] font-bold transition-colors" aria-pressed={false}>S</button>
-                <span className={`flex-1 text-[14px] font-bold uppercase tracking-tight cursor-pointer truncate ${isSelected ? 'text-primary' : ''}`} style={!isSelected ? { color: 'var(--label)' } : undefined} onClick={() => onLaneSelect(track.name)} title={track.name}>{track.name}</span>
-                {WIP_LANES.has(track.name) && <span className="text-[8px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">WIP</span>}
+                <button type="button" className={`btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded-full text-[9px] font-bold transition-colors shrink-0 ${isMuted ? 'bg-primary text-white border-primary' : 'border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-primary/20'}`} onClick={() => onLaneToggle(track.name, !en)} aria-pressed={isMuted}>M</button>
+                <button type="button" className={`btn-min min-w-[28px] min-h-[24px] flex items-center justify-center rounded-full text-[9px] font-bold transition-colors shrink-0 ${soloToggles.get(track.name) ? 'bg-yellow-500/30 border-yellow-500 text-yellow-700 dark:text-yellow-300' : 'border border-border-light dark:border-border-dark bg-slate-100/80 dark:bg-slate-800/80 hover:bg-yellow-500/20'}`} onClick={() => onSoloToggle?.(track.name, !soloToggles.get(track.name))} aria-pressed={soloToggles.get(track.name) ?? false}>S</button>
+                <span className={`flex-1 min-w-0 text-[14px] font-bold uppercase tracking-tight cursor-pointer truncate outline-none ${isSelected ? 'text-primary' : ''}`} style={!isSelected ? { color: 'var(--label)' } : undefined} onClick={() => onLaneSelect(track.name)} title={track.name}>{track.name}</span>
+                {WIP_LANES.has(track.name) && <span className="text-[8px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded shrink-0">WIP</span>}
               </div>
               <div className="step-grid flex-1 min-w-0">
                 {Array.from({ length: 16 }, (_, si) => {

@@ -13,6 +13,7 @@ interface LaneInspectorPanelProps {
   isRendering: boolean;
   hasPattern: boolean;
   onSeedRandom: () => void;
+  onExportPercuPayload?: () => void;
 }
 
 export function LaneInspectorPanel({
@@ -26,6 +27,7 @@ export function LaneInspectorPanel({
   isRendering,
   hasPattern,
   onSeedRandom,
+  onExportPercuPayload,
 }: LaneInspectorPanelProps) {
   const [vals, setVals] = useState<Record<string, number>>({});
   const lane = selectedLane ?? lanes[0] ?? '';
@@ -67,7 +69,7 @@ export function LaneInspectorPanel({
           <button type="button" className="border border-border-light dark:border-border-dark text-[10px] py-1.5 rounded font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase" onClick={onSeedRandom}>
             New Seed
           </button>
-          <button type="button" className="border border-border-light dark:border-border-dark text-[10px] py-1.5 rounded font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase" onClick={onSeedRandom}>
+          <button type="button" className="border border-border-light dark:border-border-dark text-[10px] py-1.5 rounded font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors uppercase" onClick={() => onExportPercuPayload?.()} disabled={!hasPattern} title="Export pattern JSON for Percu Pro">
             Pattern
           </button>
         </div>

@@ -1,5 +1,6 @@
 import { Pattern, Step } from '../groove/generator';
 import { Voice, KickVoice, SubVoice, LowPercVoice, MidPercVoice, HatVoice, NoiseVoice } from './voices';
+import { getGrooveOffsetMs, type GrooveTemplateId } from './grooveTemplates';
 
 export class Transport {
   private context: AudioContext;
@@ -14,8 +15,12 @@ export class Transport {
   private voices: Map<string, Voice> = new Map();
   private masterGain: GainNode;
   private laneToggles: Map<string, boolean> = new Map();
+  private laneSolo: Map<string, boolean> = new Map();
   private laneOffsets: Map<string, number> = new Map();
   private percussiveNoisy: number = 0;
+  private swingPercent: number = 50;
+  private grooveTemplateId: GrooveTemplateId = 'straight';
+  private loopSteps: number = 16; // 16 or 32 step timeline
 
   constructor(context: AudioContext, pattern: Pattern, bpm: number) {
     this.context = context;
@@ -88,6 +93,26 @@ export class Transport {
     this.laneToggles.set(trackName, enabled);
   }
 
+  setLaneSolo(trackName: string, solo: boolean) {
+    this.laneSolo.set(trackName, solo);
+  }
+
+  setSoloToggles(soloMap: Map<string, boolean>) {
+    this.laneSolo = new Map(soloMap);
+  }
+
+  setSwingPercent(percent: number) {
+    this.swingPercent = Math.max(0, Math.min(100, percent));
+  }
+
+  setGrooveTemplateId(id: GrooveTemplateId) {
+    this.grooveTemplateId = id;
+  }
+
+  setLoopSteps(steps: number) {
+    this.loopSteps = steps === 32 ? 32 : 16;
+  }
+
   setLaneOffset(trackName: string, offset: number) {
     this.laneOffsets.set(trackName, ((offset % 16) + 16) % 16);
   }
@@ -104,23 +129,47 @@ export class Transport {
     return this.currentStep;
   }
 
+  /** 16th note duration in seconds; grid is fixed to avoid drift */
   private stepTime(): number {
-    return 60 / this.bpm / 4; // 16th note duration
+    return 60 / this.bpm / 4;
   }
 
-  private scheduleStep(stepIndex: number, time: number) {
+  /** Offbeat delay from swing 0–100 (50 = no swing). Applied only to odd steps. */
+  private swingOffsetSeconds(stepIndex: number): number {
+    if (this.swingPercent === 50) return 0;
+    if (stepIndex % 2 !== 1) return 0;
+    const base = this.stepTime();
+    return base * ((this.swingPercent - 50) / 100) * 0.5;
+  }
+
+  /** Whether a track should be scheduled: mute off, solo overrides (any solo = only soloed play). */
+  private shouldScheduleTrack(trackName: string): boolean {
+    const muted = !this.laneToggles.get(trackName);
+    const soloed = this.laneSolo.get(trackName) ?? false;
+    const anySolo = Array.from(this.laneSolo.values()).some(Boolean);
+    if (anySolo) return soloed;
+    return !muted;
+  }
+
+  private scheduleStep(stepIndex: number, baseTime: number) {
+    const stepInBar = stepIndex % 16;
+    const grooveMs = getGrooveOffsetMs(stepInBar, this.grooveTemplateId);
+    const swingSec = this.swingOffsetSeconds(stepInBar);
+    const triggerTime = baseTime + grooveMs / 1000 + swingSec;
+
     this.pattern.tracks.forEach(track => {
-      if (!this.laneToggles.get(track.name)) return;
+      if (!this.shouldScheduleTrack(track.name)) return;
 
       const offset = this.laneOffsets.get(track.name) ?? 0;
-      const effectiveStep = (stepIndex + offset) % 16;
+      const effectiveStep = (stepInBar + offset) % 16;
       const step: Step = track.steps[effectiveStep];
+      const micro = step.micro ?? 0;
       if (step.on) {
         const voice = this.voices.get(track.name);
         if (voice) {
-          voice.trigger(time, {
+          voice.trigger(triggerTime + micro, {
             vel: step.vel,
-            micro: step.micro,
+            micro: 0, // already applied to triggerTime
             ratchet: step.ratchet,
           });
         }
@@ -128,14 +177,16 @@ export class Transport {
     });
   }
 
+  /** Scheduler: fixed grid (baseStep) avoids drift; groove/swing applied as trigger offset only. */
   private scheduler() {
     const currentTime = this.context.currentTime;
-    
+    const baseStep = this.stepTime();
+
     while (this.nextStepTime < currentTime + this.scheduleAhead) {
       this.scheduleStep(this.currentStep, this.nextStepTime);
-      
-      this.currentStep = (this.currentStep + 1) % 16;
-      this.nextStepTime += this.stepTime();
+
+      this.currentStep = (this.currentStep + 1) % this.loopSteps;
+      this.nextStepTime += baseStep;
     }
   }
 
@@ -152,14 +203,15 @@ export class Transport {
     }, this.lookahead * 1000);
   }
 
+  /** Stop clears scheduler and resets time/step so no double-trigger or drift on next play. */
   stop() {
     if (!this.isPlaying) return;
-    
     this.isPlaying = false;
     if (this.intervalId !== null) {
       clearInterval(this.intervalId);
       this.intervalId = null;
     }
+    this.nextStepTime = 0;
     this.currentStep = 0;
   }
 
